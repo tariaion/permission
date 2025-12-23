@@ -1,25 +1,24 @@
 set -Eeuo pipefail
 
 WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+echo "Working directory: $WORK_DIR"
 
-echo "开始构建权限管理系统..."
-
-echo "安装后端依赖..."
-cd "$WORK_DIR/permission-system/backend"
-npm install
-
-echo "构建后端..."
-npm run build
-
-echo "安装前端依赖..."
-cd "$WORK_DIR/permission-system/frontend"
-npm install
-
-echo "构建前端..."
-npm run build
-
-echo "安装共享模块依赖..."
+# 构建共享模块
+echo "Building shared module..."
 cd "$WORK_DIR/permission-system/shared"
 npm install
+npm run build
 
-echo "项目构建完成！"
+# 构建后端
+echo "Building backend..."
+cd "$WORK_DIR/permission-system/backend"
+npm install
+npm run build
+
+# 构建前端
+echo "Building frontend..."
+cd "$WORK_DIR/permission-system/frontend"
+npm install
+npm run build
+
+echo "Build completed successfully!"
