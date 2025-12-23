@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -13,8 +13,8 @@ import { Permissions } from '@/pages/Permissions';
 import { NotFound } from '@/pages/NotFound';
 import 'antd/dist/reset.css';
 
-const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Layout>{children}</Layout>
+const LayoutWrapper: React.FC<{ children: React.ReactNode }> = () => (
+  <Layout></Layout>
 );
 
 const PermissionSystemApp: React.FC = () => {
