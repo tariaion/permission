@@ -18,9 +18,8 @@ npm install
 echo "构建前端..."
 npm run build
 
-echo "构建共享模块..."
+echo "安装共享模块依赖..."
 cd "$WORK_DIR/permission-system/shared"
 npm install
-npm run build
 
 echo "项目构建完成！"
