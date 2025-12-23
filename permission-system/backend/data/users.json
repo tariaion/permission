@@ -2,11 +2,25 @@
   {
     "username": "admin",
     "email": "admin@example.com",
-    "password": "$2a$12$1quRzyQpLl8Vq4paEg8z6u8Okxco8xGHG3dwTqZxEm4JXunWvSfoO",
-    "roles": [],
+    "password": "$2a$12$LymegpJvcUWV6Se9AqSv1uFPQ3dJHtJPdZQg2c0/NPlO3G3.ACuqq",
+    "roles": [
+      "role1"
+    ],
     "isActive": true,
-    "createdAt": "2025-12-23T04:29:13.286Z",
-    "updatedAt": "2025-12-23T04:29:13.286Z",
-    "id": "mji35bye5fwkbqd3vj4"
+    "createdAt": "2025-12-23T03:02:22.864Z",
+    "updatedAt": "2025-12-23T03:02:22.864Z",
+    "id": "mji01nkgrhpo7m8c8kh"
+  },
+  {
+    "username": "zhangsan",
+    "email": "zhangsan@example.com",
+    "password": "$2a$12$XugykR6dcBtfIMvK3bEjSu9CCe5CWte.8ZAjy4G4GgxfPmh/sNwb2",
+    "roles": [
+      "mjidgwfc6blgejn6ebp"
+    ],
+    "isActive": true,
+    "createdAt": "2025-12-23T09:17:18.955Z",
+    "updatedAt": "2025-12-23T09:22:21.388Z",
+    "id": "mjidftnvv58fr6qcvi9"
   }
 ]

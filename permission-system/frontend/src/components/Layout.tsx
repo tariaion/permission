@@ -23,7 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const { Header, Sider, Content } = AntLayout;
 
-export const Layout: React.FC = () => {
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -146,7 +146,8 @@ export const Layout: React.FC = () => {
             background: colorBgContainer,
           }}
         >
-          <Outlet />
+          {/* <Outlet /> */}
+          { children }
         </Content>
       </AntLayout>
     </AntLayout>

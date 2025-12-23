@@ -169,6 +169,7 @@ export const Permissions: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
         }}
+        scroll={{ x: 800 }}
       />
 
       <Modal
