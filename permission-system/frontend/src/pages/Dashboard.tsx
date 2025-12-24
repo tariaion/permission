@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Row, Col, Statistic, Typography } from 'antd';
-import { UserOutlined, TeamOutlined, SafetyOutlined } from '@ant-design/icons';
+import { UserOutlined, TeamOutlined, SafetyOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers, useRoles, usePermissions } from '@/hooks';
 
@@ -13,7 +13,7 @@ export const Dashboard: React.FC = () => {
   const { permissions } = usePermissions();
 
   const activeUsers = users.filter(u => u.isActive).length;
-  // const inactiveUsers = users.filter(u => !u.isActive).length;
+  const inactiveUsers = users.filter(u => !u.isActive).length;
 
   return (
     <div>

@@ -83,7 +83,7 @@ export class AuthController {
   public createUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const createUserRequest: CreateUserRequest = req.body;
-      const user = await this.authService.createUser(createUserRequest);
+      const user = await this.authService.createUser(createUserRequest, req.user!);
 
       const response: ApiResponse = {
         success: true,
@@ -105,7 +105,7 @@ export class AuthController {
     try {
       const { id } = req.params;
       const updates: UpdateUserRequest = req.body;
-      const user = await this.authService.updateUser(id, updates);
+      const user = await this.authService.updateUser(id, updates, req.user!);
 
       if (!user) {
         const response: ApiResponse = {
@@ -183,7 +183,7 @@ export class AuthController {
   public deleteUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const deleted = await this.authService.deleteUser(id);
+      const deleted = await this.authService.deleteUser(id, req.user!);
 
       if (!deleted) {
         const response: ApiResponse = {
@@ -214,7 +214,7 @@ export class AuthController {
       const { id } = req.params;
       const { oldPassword, newPassword } = req.body;
 
-      await this.authService.changePassword(id, oldPassword, newPassword);
+      await this.authService.changePassword(id, oldPassword, newPassword, req.user!);
 
       const response: ApiResponse = {
         success: true,

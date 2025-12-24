@@ -1,7 +1,7 @@
 export * from './shared';
 
 export interface FrontendUser extends Omit<import('./shared').User, 'password'> {
-  permissions?: string[];
+  permissions?: import('./shared').Permission[];
 }
 
 export interface AuthContextType {
@@ -30,3 +30,5 @@ export interface LoginResponse {
   token: string;
   expiresIn: number;
 }
+
+export type Position = 'member' | 'group_leader' | 'department_leader' | 'admin';

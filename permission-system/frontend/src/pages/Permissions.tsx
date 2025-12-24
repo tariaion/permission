@@ -6,6 +6,7 @@ import {
   Modal,
   Form,
   Input,
+  message,
   Popconfirm,
   Tag,
 } from 'antd';
@@ -14,6 +15,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
 import { usePermissions } from '@/hooks';
 import { Permission, CreatePermissionRequest, UpdatePermissionRequest } from '@/types';
@@ -95,7 +97,7 @@ export const Permissions: React.FC = () => {
     {
       title: '权限标识',
       key: 'identifier',
-      render: (_: any, record: Permission) => (
+      render: (_, record: Permission) => (
         <Tag color="purple">
           {record.resource}:{record.action}
         </Tag>
@@ -116,7 +118,7 @@ export const Permissions: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (_: any, record: Permission) => (
+      render: (_, record: Permission) => (
         <Space>
           <Button
             type="link"
@@ -144,8 +146,8 @@ export const Permissions: React.FC = () => {
     },
   ];
 
-  // const defaultActions = ['create', 'read', 'update', 'delete'];
-  // const defaultResources = ['users', 'roles', 'permissions'];
+  const defaultActions = ['create', 'read', 'update', 'delete'];
+  const defaultResources = ['users', 'roles', 'permissions'];
 
   return (
     <div>

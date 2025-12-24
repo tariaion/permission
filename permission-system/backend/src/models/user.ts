@@ -1,5 +1,5 @@
+import { User, CreateUserRequest, UpdateUserRequest } from '../types/shared';
 import { JsonStore } from '../utils/json-store';
-import { User } from '../types/shared';
 
 export class UserModel {
   private store: JsonStore<User>;
@@ -9,48 +9,74 @@ export class UserModel {
   }
 
   public async findAll(): Promise<User[]> {
-    return this.store.findAll();
+    return this.store.read('users.json') || [];
   }
 
   public async findById(id: string): Promise<User | null> {
-    const user = this.store.findById(id);
-    return user || null;
+    const users = await this.findAll();
+    return users.find(user => user.id === id) || null;
   }
 
   public async findByUsername(username: string): Promise<User | null> {
-    const user = this.store.findOne(user => user.username === username);
-    return user || null;
+    const users = await this.findAll();
+    return users.find(user => user.username === username) || null;
   }
 
   public async findByEmail(email: string): Promise<User | null> {
-    const user = this.store.findOne(user => user.email === email);
-    return user || null;
+    const users = await this.findAll();
+    return users.find(user => user.email === email) || null;
   }
 
   public async create(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    const users = await this.findAll();
     const now = new Date();
-    const user = this.store.create({
+    
+    const user: User = {
+      id: this.generateId(),
       ...userData,
       createdAt: now,
       updatedAt: now,
-    });
+    };
+
+    users.push(user);
+    await this.store.write('users.json', users);
+    
     return user;
   }
 
   public async update(id: string, updates: Partial<User>): Promise<User | null> {
-    const updateData = {
+    const users = await this.findAll();
+    const userIndex = users.findIndex(user => user.id === id);
+    
+    if (userIndex === -1) {
+      return null;
+    }
+
+    users[userIndex] = {
+      ...users[userIndex],
       ...updates,
       updatedAt: new Date(),
     };
-    return this.store.update(id, updateData);
+
+    await this.store.write('users.json', users);
+    return users[userIndex];
   }
 
   public async delete(id: string): Promise<boolean> {
-    return this.store.delete(id);
+    const users = await this.findAll();
+    const filteredUsers = users.filter(user => user.id !== id);
+    
+    if (filteredUsers.length === users.length) {
+      return false;
+    }
+
+    await this.store.write('users.json', filteredUsers);
+    return true;
   }
 
   public async exists(id: string): Promise<boolean> {
-    return this.store.exists(id);
+    const user = await this.findById(id);
+    return user !== null;
   }
 
   public async existsByUsername(username: string): Promise<boolean> {
@@ -64,6 +90,26 @@ export class UserModel {
   }
 
   public async count(): Promise<number> {
-    return this.store.count();
+    const users = await this.findAll();
+    return users.length;
+  }
+
+  public async getUsersByGroup(groupId: string): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.groupId === groupId);
+  }
+
+  public async getUsersByDepartment(departmentId: string): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.departmentId === departmentId);
+  }
+
+  public async getUsersByLeader(leaderId: string): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.leaderId === leaderId);
+  }
+
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
   }
 }

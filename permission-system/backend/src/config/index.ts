@@ -9,7 +9,7 @@ export interface AppConfig {
 }
 
 export const config: AppConfig = {
-  port: parseInt(process.env.DEPLOY_RUN_PORT || process.env.PORT || '3001', 10),
+  port: parseInt(process.env.PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',

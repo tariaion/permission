@@ -9,16 +9,19 @@ import {
   UpdateUserRequest 
 } from '../types/shared';
 import { UserModel, RoleModel, AuthTokenModel } from '../models';
+import { PermissionChecker } from './permission-checker';
 
 export class AuthService {
   private userModel: UserModel;
   private roleModel: RoleModel;
   private authTokenModel: AuthTokenModel;
+  private permissionChecker: PermissionChecker;
 
   constructor() {
     this.userModel = new UserModel();
     this.roleModel = new RoleModel();
     this.authTokenModel = new AuthTokenModel();
+    this.permissionChecker = new PermissionChecker();
   }
 
   public async login(loginRequest: LoginRequest): Promise<LoginResponse> {
@@ -41,7 +44,7 @@ export class AuthService {
     const token = jwt.sign(
       { userId: user.id, username: user.username },
       config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn as '24h' }
+      { expiresIn: config.jwtExpiresIn }
     );
 
     const expiresIn = this.parseExpiresIn(config.jwtExpiresIn);
@@ -83,8 +86,8 @@ export class AuthService {
     }
   }
 
-  public async createUser(createUserRequest: CreateUserRequest): Promise<Omit<User, 'password'>> {
-    const { username, email, password, roles = [] } = createUserRequest;
+  public async createUser(createUserRequest: CreateUserRequest, currentUser: User): Promise<Omit<User, 'password'>> {
+    const { username, email, password, roles = [], groupId, position, departmentId, leaderId } = createUserRequest;
 
     const existingUserByUsername = await this.userModel.existsByUsername(username);
     if (existingUserByUsername) {
@@ -106,6 +109,9 @@ export class AuthService {
       }
     }
 
+    // 权限检查：只有管理员可以创建用户
+    await this.permissionChecker.checkAndThrow(currentUser, 'users', 'create');
+
     const hashedPassword = await bcrypt.hash(password, config.bcryptRounds);
     
     const user = await this.userModel.create({
@@ -113,16 +119,32 @@ export class AuthService {
       email,
       password: hashedPassword,
       roles,
+      groupId,
+      position,
+      departmentId,
+      leaderId,
       isActive: true,
-      // createdAt: new Date(),
-      // updatedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
-  public async updateUser(id: string, updates: UpdateUserRequest): Promise<Omit<User, 'password'> | null> {
+  public async updateUser(id: string, updates: UpdateUserRequest, currentUser: User): Promise<Omit<User, 'password'> | null> {
+    const context = {
+      user: currentUser,
+      targetUserId: id,
+      action: 'update',
+      resource: 'users'
+    };
+
+    const hasAccess = await this.permissionChecker.checkPermissionWithContext(context);
+    if (!hasAccess) {
+      throw new Error('权限不足：无法修改该用户信息');
+    }
+
     const existingUser = await this.userModel.findById(id);
     if (!existingUser) {
       throw new Error('用户不存在');
@@ -161,7 +183,19 @@ export class AuthService {
     return userWithoutPassword;
   }
 
-  public async changePassword(id: string, oldPassword: string, newPassword: string): Promise<void> {
+  public async changePassword(id: string, oldPassword: string, newPassword: string, currentUser: User): Promise<void> {
+    const context = {
+      user: currentUser,
+      targetUserId: id,
+      action: 'update',
+      resource: 'users'
+    };
+
+    const hasAccess = await this.permissionChecker.checkPermissionWithContext(context);
+    if (!hasAccess) {
+      throw new Error('权限不足：无法修改该用户密码');
+    }
+
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new Error('用户不存在');
@@ -178,24 +212,72 @@ export class AuthService {
     await this.authTokenModel.deleteByUserId(id);
   }
 
-  public async getAllUsers(): Promise<Omit<User, 'password'>[]> {
+  public async getAllUsers(currentUser?: User): Promise<Omit<User, 'password'>[]> {
     const users = await this.userModel.findAll();
-    return users.map(user => {
+    
+    if (!currentUser) {
+      return users.map(user => {
+        const { password: _, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+    }
+
+    // 根据权限过滤用户
+    let filteredUsers = users;
+
+    if (currentUser.position !== 'admin') {
+      if (currentUser.position === 'department_leader' && currentUser.departmentId) {
+        filteredUsers = users.filter(user => user.departmentId === currentUser.departmentId);
+      } else if (currentUser.position === 'group_leader' && currentUser.groupId) {
+        filteredUsers = users.filter(user => user.groupId === currentUser.groupId);
+      } else {
+        filteredUsers = users.filter(user => user.id === currentUser.id);
+      }
+    }
+
+    return filteredUsers.map(user => {
       const { password: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
   }
 
-  public async getUserById(id: string): Promise<Omit<User, 'password'> | null> {
+  public async getUserById(id: string, currentUser?: User): Promise<Omit<User, 'password'> | null> {
     const user = await this.userModel.findById(id);
     if (!user) {
       return null;
     }
+
+    if (currentUser) {
+      const context = {
+        user: currentUser,
+        targetUserId: id,
+        action: 'read',
+        resource: 'users'
+      };
+
+      const hasAccess = await this.permissionChecker.checkPermissionWithContext(context);
+      if (!hasAccess) {
+        return null;
+      }
+    }
+
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
 
-  public async deleteUser(id: string): Promise<boolean> {
+  public async deleteUser(id: string, currentUser: User): Promise<boolean> {
+    const context = {
+      user: currentUser,
+      targetUserId: id,
+      action: 'delete',
+      resource: 'users'
+    };
+
+    const hasAccess = await this.permissionChecker.checkPermissionWithContext(context);
+    if (!hasAccess) {
+      throw new Error('权限不足：无法删除该用户');
+    }
+
     await this.authTokenModel.deleteByUserId(id);
     return await this.userModel.delete(id);
   }

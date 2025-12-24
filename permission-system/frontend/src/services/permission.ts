@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { CreatePermissionRequest, UpdatePermissionRequest, Permission } from '@/types';
+import { ApiResponse, CreatePermissionRequest, UpdatePermissionRequest, Permission } from '@/types';
 
 export class PermissionService {
   public async getAllPermissions(): Promise<Permission[]> {

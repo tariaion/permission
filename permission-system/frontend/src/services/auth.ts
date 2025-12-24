@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { LoginRequest, LoginResponse } from '@/types';
+import { LoginRequest, LoginResponse, ApiResponse } from '@/types';
 
 export class AuthService {
   public async login(credentials: LoginRequest): Promise<LoginResponse> {

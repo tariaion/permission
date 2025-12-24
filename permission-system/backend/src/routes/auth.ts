@@ -8,10 +8,11 @@ import {
   updateUserSchema,
   changePasswordSchema 
 } from '../middleware/validation';
-import { requirePermission } from '../middleware/permission';
+import { PermissionChecker } from '../services/permission-checker';
 
 const router = Router();
 const authController = new AuthController();
+const permissionChecker = new PermissionChecker();
 
 router.post('/login', validateRequest(loginSchema), authController.login);
 
@@ -22,29 +23,37 @@ router.get('/me', authenticateToken, authController.getCurrentUser);
 router.post(
   '/users',
   authenticateToken,
-  requirePermission('users', 'create'),
   validateRequest(createUserSchema),
+  async (req, res, next) => {
+    try {
+      const user = req.user;
+      await permissionChecker.checkAndThrow(user, 'users', 'create');
+      next();
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        error: error instanceof Error ? error.message : '权限不足',
+      });
+    }
+  },
   authController.createUser
 );
 
 router.get(
   '/users',
   authenticateToken,
-  requirePermission('users', 'read'),
   authController.getAllUsers
 );
 
 router.get(
   '/users/:id',
   authenticateToken,
-  requirePermission('users', 'read'),
   authController.getUserById
 );
 
 router.put(
   '/users/:id',
   authenticateToken,
-  requirePermission('users', 'update'),
   validateRequest(updateUserSchema),
   authController.updateUser
 );
@@ -52,7 +61,6 @@ router.put(
 router.delete(
   '/users/:id',
   authenticateToken,
-  requirePermission('users', 'delete'),
   authController.deleteUser
 );
 
