@@ -1,5 +1,5 @@
 import { apiService } from './api';
-import { ApiResponse, CreateRoleRequest, UpdateRoleRequest, Role } from '@/types';
+import { CreateRoleRequest, UpdateRoleRequest, Role } from '@/types';
 
 export class RoleService {
   public async getAllRoles(): Promise<Role[]> {

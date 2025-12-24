@@ -44,7 +44,7 @@ export class AuthService {
     const token = jwt.sign(
       { userId: user.id, username: user.username },
       config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
+      { expiresIn: config.jwtExpiresIn as '24h' }
     );
 
     const expiresIn = this.parseExpiresIn(config.jwtExpiresIn);
@@ -124,8 +124,8 @@ export class AuthService {
       departmentId,
       leaderId,
       isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      // createdAt: new Date(),
+      // updatedAt: new Date(),
     });
 
     const { password: _, ...userWithoutPassword } = user;

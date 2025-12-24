@@ -7,7 +7,6 @@ import {
   Form,
   Input,
   Select,
-  message,
   Popconfirm,
   Tag,
 } from 'antd';
@@ -16,7 +15,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
-  SafetyOutlined,
 } from '@ant-design/icons';
 import { useRoles } from '@/hooks';
 import { Role, CreateRoleRequest, UpdateRoleRequest } from '@/types';
@@ -125,7 +123,7 @@ export const Roles: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (_, record: Role) => (
+      render: (_: any, record: Role) => (
         <Space>
           <Button
             type="link"

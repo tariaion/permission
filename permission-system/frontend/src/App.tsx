@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { Children } from 'react';
+=======
+import React from 'react';
+>>>>>>> 6ca9cf9 (Restored to '004672d3e0b522a6a98d03d9c0c3c11f40f1e980')
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -15,8 +19,8 @@ import { Groups } from '@/pages/Groups';
 import { NotFound } from '@/pages/NotFound';
 import 'antd/dist/reset.css';
 
-const LayoutWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Layout>{children}</Layout>
+const LayoutWrapper: React.FC<{ children: React.ReactNode }> = () => (
+  <Layout></Layout>
 );
 
 // 权限控制的路由组件
