@@ -22,21 +22,71 @@ import {
   SettingOutlined,
   ApartmentOutlined,
   BlockOutlined,
+  CrownOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '@/hooks/useAuth';
+import { useRoutePermissions } from '@/components/ProtectedRoute';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const { Header, Sider, Content } = AntLayout;
 
-export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission } = usePermissions();
   const {
     token: { colorBgContainer },
   } = theme.useToken();
+
+  // 路由配置，包含权限要求
+  const routes = [
+    {
+      key: '/dashboard',
+      icon: <DashboardOutlined />,
+      label: '仪表板',
+      requiredPermissions: [] as string[],
+    },
+    {
+      key: '/users',
+      icon: <UserOutlined />,
+      label: '用户管理',
+      requiredPermissions: ['user:read'],
+    },
+    {
+      key: '/roles',
+      icon: <TeamOutlined />,
+      label: '角色管理',
+      requiredPermissions: ['role:read'],
+    },
+    {
+      key: '/permissions',
+      icon: <SafetyOutlined />,
+      label: '权限管理',
+      requiredPermissions: ['permission:read'],
+    },
+    {
+      key: '/job-levels',
+      icon: <CrownOutlined />,
+      label: '职级管理',
+      requiredPermissions: ['job_level:read'],
+    },
+    {
+      key: '/departments',
+      icon: <ApartmentOutlined />,
+      label: '部门管理',
+      requiredPermissions: ['department:read'],
+    },
+    {
+      key: '/groups',
+      icon: <BlockOutlined />,
+      label: '组管理',
+      requiredPermissions: ['group:read'],
+    },
+  ];
 
   useEffect(() => {
     const handleResize = () => {
@@ -52,38 +102,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表板',
-    },
-    {
-      key: '/users',
-      icon: <UserOutlined />,
-      label: '用户管理',
-    },
-    {
-      key: '/roles',
-      icon: <TeamOutlined />,
-      label: '角色管理',
-    },
-    {
-      key: '/permissions',
-      icon: <SafetyOutlined />,
-      label: '权限管理',
-    },
-    {
-      key: '/departments',
-      icon: <ApartmentOutlined />,
-      label: '部门管理',
-    },
-    {
-      key: '/groups',
-      icon: <BlockOutlined />,
-      label: '组管理',
-    },
-  ];
+  // 根据权限过滤菜单项
+  const getMenuItems = () => {
+    return routes.filter(route => {
+      if (route.requiredPermissions.length === 0) return true;
+      return route.requiredPermissions.some(permission => hasPermission(permission));
+    });
+  };
+
+  const menuItems = getMenuItems();
 
   const userMenuItems = [
     {
@@ -213,7 +240,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             overflow: 'auto',
           }}
         >
-          {children}
+          <Outlet />
         </Content>
       </AntLayout>
 

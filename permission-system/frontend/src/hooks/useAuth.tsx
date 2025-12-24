@@ -29,6 +29,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storedUser && storedToken) {
           setUser(storedUser);
           setToken(storedToken);
+          // 获取用户权限信息
+          await refreshUserPermissions();
         } else {
           setUser(null);
           setToken(null);
@@ -50,6 +52,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login({ username, password });
       setUser(response.user);
       setToken(response.token);
+      // 登录后获取用户权限信息
+      await refreshUserPermissions();
     } catch (error) {
       throw error;
     }
@@ -66,6 +70,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUserPermissions = async (): Promise<void> => {
+    if (!token) return;
+    
+    try {
+      const permissionsData = await authService.getUserPermissions();
+      setUser(prevUser => {
+        if (!prevUser) return null;
+        return {
+          ...prevUser,
+          effectivePermissions: permissionsData.effectivePermissions,
+          permissions: permissionsData.permissions,
+          jobLevel: permissionsData.jobLevel,
+        };
+      });
+    } catch (error) {
+      console.error('Failed to refresh user permissions:', error);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -73,6 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     loading,
     isAuthenticated: !!user && !!token,
+    refreshUserPermissions,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

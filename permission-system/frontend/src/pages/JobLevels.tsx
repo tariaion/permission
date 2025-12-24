@@ -7,7 +7,7 @@ import {
   Modal,
   Form,
   Input,
-  Select,
+  InputNumber,
   message,
   Popconfirm,
   Tag,
@@ -15,55 +15,70 @@ import {
   Row,
   Col,
   Statistic,
+  Select,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
-  SettingOutlined,
+  CrownOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { PermissionGuard } from '@/components/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { jobLevelService } from '@/services/job-level';
 import { permissionService } from '@/services/permission';
-import type { Permission } from '@/types';
+import type { JobLevel, Permission } from '@/types';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
-export const PermissionsPage: React.FC = () => {
+export const JobLevelsPage: React.FC = () => {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
+  const [jobLevels, setJobLevels] = useState<JobLevel[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [editingJobLevel, setEditingJobLevel] = useState<JobLevel | null>(null);
   const [form] = Form.useForm();
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
+    loadJobLevels();
     loadPermissions();
     loadStats();
   }, []);
 
-  const loadPermissions = async () => {
+  const loadJobLevels = async () => {
     setLoading(true);
     try {
-      const response = await permissionService.getAllPermissions();
+      const response = await jobLevelService.getAllJobLevels({ active: true });
       if (response.success && response.data) {
-        setPermissions(response.data);
+        setJobLevels(response.data.sort((a, b) => a.level - b.level));
       }
     } catch (error) {
-      message.error('加载权限列表失败');
+      message.error('加载职级列表失败');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadPermissions = async () => {
+    try {
+      const response = await permissionService.getAllPermissions({ category: 'business' });
+      if (response.success && response.data) {
+        setPermissions(response.data);
+      }
+    } catch (error) {
+      console.error('加载权限列表失败:', error);
+    }
+  };
+
   const loadStats = async () => {
     try {
-      const response = await permissionService.getPermissionStats();
+      const response = await jobLevelService.getJobLevelStats();
       if (response.success && response.data) {
         setStats(response.data);
       }
@@ -73,23 +88,23 @@ export const PermissionsPage: React.FC = () => {
   };
 
   const handleCreate = () => {
-    setEditingPermission(null);
+    setEditingJobLevel(null);
     form.resetFields();
     setModalVisible(true);
   };
 
-  const handleEdit = (permission: Permission) => {
-    setEditingPermission(permission);
-    form.setFieldsValue(permission);
+  const handleEdit = (jobLevel: JobLevel) => {
+    setEditingJobLevel(jobLevel);
+    form.setFieldsValue(jobLevel);
     setModalVisible(true);
   };
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await permissionService.deletePermission(id);
+      const response = await jobLevelService.deleteJobLevel(id);
       if (response.success) {
         message.success('删除成功');
-        loadPermissions();
+        loadJobLevels();
         loadStats();
       } else {
         message.error(response.message || '删除失败');
@@ -103,21 +118,21 @@ export const PermissionsPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       
-      if (editingPermission) {
-        const response = await permissionService.updatePermission(editingPermission.id, values);
+      if (editingJobLevel) {
+        const response = await jobLevelService.updateJobLevel(editingJobLevel.id, values);
         if (response.success) {
           message.success('更新成功');
           setModalVisible(false);
-          loadPermissions();
+          loadJobLevels();
         } else {
           message.error(response.message || '更新失败');
         }
       } else {
-        const response = await permissionService.createPermission(values);
+        const response = await jobLevelService.createJobLevel(values);
         if (response.success) {
           message.success('创建成功');
           setModalVisible(false);
-          loadPermissions();
+          loadJobLevels();
           loadStats();
         } else {
           message.error(response.message || '创建失败');
@@ -128,63 +143,48 @@ export const PermissionsPage: React.FC = () => {
     }
   };
 
-  const initializeSystemPermissions = async () => {
-    try {
-      const response = await permissionService.initializeSystemPermissions();
-      if (response.success) {
-        message.success('系统权限初始化成功');
-        loadPermissions();
-        loadStats();
-      } else {
-        message.error(response.message || '初始化失败');
-      }
-    } catch (error) {
-      message.error('初始化失败');
-    }
+  const getLevelColor = (level: number): string => {
+    const colors = [
+      '#108ee9', '#52c41a', '#faad14', '#fa541c', '#722ed1', '#eb2f96', '#13c2c2'
+    ];
+    return colors[level - 1] || '#d9d9d9';
   };
 
   const columns = [
     {
-      title: '权限名称',
+      title: '职级名称',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: Permission) => (
+      render: (text: string, record: JobLevel) => (
         <Space>
+          <CrownOutlined style={{ color: getLevelColor(record.level) }} />
           <span>{text}</span>
-          {record.isSystem && <Tag color="red">系统</Tag>}
+          {!record.isActive && <Tag color="red">停用</Tag>}
         </Space>
       ),
     },
     {
-      title: '权限代码',
+      title: '职级代码',
       dataIndex: 'code',
       key: 'code',
-      render: (text: string) => <code>{text}</code>,
-    },
-    {
-      title: '资源',
-      dataIndex: 'resource',
-      key: 'resource',
       render: (text: string) => <Tag color="blue">{text}</Tag>,
     },
     {
-      title: '操作',
-      dataIndex: 'action',
-      key: 'action',
-      render: (text: string) => <Tag color="green">{text}</Tag>,
+      title: '级别',
+      dataIndex: 'level',
+      key: 'level',
+      render: (text: number) => (
+        <Tag color={getLevelColor(text)} style={{ fontWeight: 'bold' }}>
+          Level {text}
+        </Tag>
+      ),
+      sorter: (a: JobLevel, b: JobLevel) => a.level - b.level,
     },
     {
-      title: '分类',
-      dataIndex: 'category',
-      key: 'category',
-      render: (text: string) => {
-        const colorMap: Record<string, string> = {
-          system: 'red',
-          business: 'blue',
-          data: 'orange',
-        };
-        return <Tag color={colorMap[text]}>{text}</Tag>;
-      },
+      title: '权限数量',
+      dataIndex: 'permissions',
+      key: 'permissions',
+      render: (permissions: string[]) => <Tag color="green">{permissions?.length || 0} 项</Tag>,
     },
     {
       title: '描述',
@@ -201,10 +201,10 @@ export const PermissionsPage: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (text: any, record: Permission) => (
+      render: (text: any, record: JobLevel) => (
         <Space>
           <PermissionGuard
-            permissions="permission:update"
+            permissions="job_level:update"
             fallback={<Button size="small" disabled>编辑</Button>}
           >
             <Button
@@ -212,27 +212,24 @@ export const PermissionsPage: React.FC = () => {
               size="small"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
-              disabled={record.isSystem}
             >
               编辑
             </Button>
           </PermissionGuard>
           
           <PermissionGuard
-            permissions="permission:delete"
+            permissions="job_level:delete"
             fallback={<Button size="small" danger disabled>删除</Button>}
           >
             <Popconfirm
-              title="确定要删除这个权限吗？"
+              title="确定要删除这个职级吗？"
               onConfirm={() => handleDelete(record.id)}
-              disabled={record.isSystem}
             >
               <Button
                 type="link"
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                disabled={record.isSystem}
               >
                 删除
               </Button>
@@ -250,22 +247,25 @@ export const PermissionsPage: React.FC = () => {
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>
             <Card>
-              <Statistic title="总权限数" value={stats.total} />
+              <Statistic title="总职级数" value={stats.total} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
-              <Statistic title="系统权限" value={stats.system} />
+              <Statistic title="活跃职级" value={stats.active} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
-              <Statistic title="业务权限" value={stats.business} />
+              <Statistic title="停用职级" value={stats.inactive} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
-              <Statistic title="数据权限" value={stats.data} />
+              <Statistic 
+                title="级别范围" 
+                value={`${stats.levelRange?.min || 0} - ${stats.levelRange?.max || 0}`} 
+              />
             </Card>
           </Col>
         </Row>
@@ -274,33 +274,25 @@ export const PermissionsPage: React.FC = () => {
       <Card
         title={
           <Space>
-            <SettingOutlined />
-            权限管理
+            <CrownOutlined />
+            职级管理
           </Space>
         }
         extra={
           <Space>
-            <PermissionGuard permissions="permission:create">
+            <PermissionGuard permissions="job_level:create">
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleCreate}
               >
-                新增权限
-              </Button>
-            </PermissionGuard>
-            
-            <PermissionGuard permissions="system:admin">
-              <Button
-                onClick={initializeSystemPermissions}
-              >
-                初始化系统权限
+                新增职级
               </Button>
             </PermissionGuard>
             
             <Button
               icon={<ReloadOutlined />}
-              onClick={loadPermissions}
+              onClick={loadJobLevels}
             >
               刷新
             </Button>
@@ -309,7 +301,7 @@ export const PermissionsPage: React.FC = () => {
       >
         <Table
           columns={columns}
-          dataSource={permissions}
+          dataSource={jobLevels}
           rowKey="id"
           loading={loading}
           pagination={{
@@ -321,7 +313,7 @@ export const PermissionsPage: React.FC = () => {
       </Card>
 
       <Modal
-        title={editingPermission ? '编辑权限' : '新增权限'}
+        title={editingJobLevel ? '编辑职级' : '新增职级'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
@@ -331,84 +323,67 @@ export const PermissionsPage: React.FC = () => {
           form={form}
           layout="vertical"
         >
-          <Form.Item
-            name="name"
-            label="权限名称"
-            rules={[{ required: true, message: '请输入权限名称' }]}
-          >
-            <Input placeholder="请输入权限名称" />
-          </Form.Item>
-
-          <Form.Item
-            name="code"
-            label="权限代码"
-            rules={[
-              { required: true, message: '请输入权限代码' },
-              { pattern: /^[a-zA-Z0-9_:]+$/, message: '权限代码只能包含字母、数字、下划线和冒号' }
-            ]}
-          >
-            <Input placeholder="例如: user:create" />
-          </Form.Item>
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="resource"
-                label="资源"
-                rules={[{ required: true, message: '请选择资源' }]}
+                name="name"
+                label="职级名称"
+                rules={[{ required: true, message: '请输入职级名称' }]}
               >
-                <Select placeholder="请选择资源">
-                  <Option value="user">用户</Option>
-                  <Option value="role">角色</Option>
-                  <Option value="permission">权限</Option>
-                  <Option value="department">部门</Option>
-                  <Option value="group">组</Option>
-                  <Option value="job_level">职级</Option>
-                  <Option value="system">系统</Option>
-                  <Option value="profile">档案</Option>
-                </Select>
+                <Input placeholder="请输入职级名称" />
               </Form.Item>
             </Col>
             
             <Col span={12}>
               <Form.Item
-                name="action"
-                label="操作"
-                rules={[{ required: true, message: '请选择操作' }]}
+                name="code"
+                label="职级代码"
+                rules={[
+                  { required: true, message: '请输入职级代码' },
+                  { pattern: /^[a-zA-Z0-9_]+$/, message: '职级代码只能包含字母、数字和下划线' }
+                ]}
               >
-                <Select placeholder="请选择操作">
-                  <Option value="create">创建</Option>
-                  <Option value="read">查看</Option>
-                  <Option value="update">更新</Option>
-                  <Option value="delete">删除</Option>
-                  <Option value="manage">管理</Option>
-                  <Option value="admin">管理</Option>
-                  <Option value="read_self">查看自己</Option>
-                  <Option value="update_self">更新自己</Option>
-                  <Option value="manage_all">管理所有</Option>
-                </Select>
+                <Input placeholder="例如: senior_engineer" />
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item
-            name="category"
-            label="权限分类"
-            initialValue="business"
+            name="level"
+            label="职级级别"
+            rules={[{ required: true, message: '请输入职级级别' }]}
           >
-            <Select placeholder="请选择权限分类">
-              <Option value="system">系统权限</Option>
-              <Option value="business">业务权限</Option>
-              <Option value="data">数据权限</Option>
+            <InputNumber
+              placeholder="数字越大级别越高"
+              min={1}
+              max={99}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="permissions"
+            label="内置权限"
+          >
+            <Select
+              mode="multiple"
+              placeholder="请选择此职级默认拥有的权限"
+              allowClear
+            >
+              {permissions.map(permission => (
+                <Option key={permission.id} value={permission.id}>
+                  {permission.name} ({permission.code})
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
           <Form.Item
             name="description"
             label="描述"
-            rules={[{ required: true, message: '请输入权限描述' }]}
+            rules={[{ required: true, message: '请输入职级描述' }]}
           >
-            <TextArea rows={3} placeholder="请输入权限描述" />
+            <TextArea rows={3} placeholder="请输入职级描述" />
           </Form.Item>
         </Form>
       </Modal>

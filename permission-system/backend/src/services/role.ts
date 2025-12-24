@@ -29,6 +29,7 @@ export class RoleService {
 
     const role = await this.roleModel.create({
       name,
+      code: name.toLowerCase().replace(/\s+/g, '_'),
       description,
       permissions,
     });

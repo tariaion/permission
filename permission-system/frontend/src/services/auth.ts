@@ -29,6 +29,12 @@ export class AuthService {
     return response.data;
   }
 
+  public async getUserPermissions(userId?: string): Promise<any> {
+    const url = userId ? `/users/${userId}/permissions` : '/users/profile/permissions';
+    const response = await apiService.get(url);
+    return response.data;
+  }
+
   public isAuthenticated(): boolean {
     return !!apiService.getToken();
   }

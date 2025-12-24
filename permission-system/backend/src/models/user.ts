@@ -27,13 +27,22 @@ export class UserModel {
     return users.find(user => user.email === email) || null;
   }
 
-  public async create(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  public async create(userData: CreateUserRequest): Promise<User> {
     const users = await this.findAll();
     const now = new Date();
     
     const user: User = {
       id: this.generateId(),
-      ...userData,
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      roles: userData.roles || [],
+      jobLevelId: userData.jobLevelId,
+      departmentId: userData.departmentId,
+      groupId: userData.groupId,
+      leaderId: userData.leaderId,
+      directPermissions: userData.directPermissions || [],
+      isActive: true,
       createdAt: now,
       updatedAt: now,
     };
@@ -44,7 +53,7 @@ export class UserModel {
     return user;
   }
 
-  public async update(id: string, updates: Partial<User>): Promise<User | null> {
+  public async update(id: string, updates: UpdateUserRequest): Promise<User | null> {
     const users = await this.findAll();
     const userIndex = users.findIndex(user => user.id === id);
     
@@ -94,19 +103,53 @@ export class UserModel {
     return users.length;
   }
 
+  public async getActiveUsers(): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.isActive);
+  }
+
   public async getUsersByGroup(groupId: string): Promise<User[]> {
     const users = await this.findAll();
-    return users.filter(user => user.groupId === groupId);
+    return users.filter(user => user.groupId === groupId && user.isActive);
   }
 
   public async getUsersByDepartment(departmentId: string): Promise<User[]> {
     const users = await this.findAll();
-    return users.filter(user => user.departmentId === departmentId);
+    return users.filter(user => user.departmentId === departmentId && user.isActive);
+  }
+
+  public async getUsersByJobLevel(jobLevelId: string): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.jobLevelId === jobLevelId && user.isActive);
   }
 
   public async getUsersByLeader(leaderId: string): Promise<User[]> {
     const users = await this.findAll();
-    return users.filter(user => user.leaderId === leaderId);
+    return users.filter(user => user.leaderId === leaderId && user.isActive);
+  }
+
+  public async getUsersByRole(roleId: string): Promise<User[]> {
+    const users = await this.findAll();
+    return users.filter(user => user.roles.includes(roleId) && user.isActive);
+  }
+
+  public async updateLastLogin(id: string): Promise<boolean> {
+    const user = await this.findById(id);
+    if (!user) {
+      return false;
+    }
+
+    return await this.update(id, { lastLoginAt: new Date() }) !== null;
+  }
+
+  public async searchUsers(query: string): Promise<User[]> {
+    const users = await this.getActiveUsers();
+    const lowerQuery = query.toLowerCase();
+    
+    return users.filter(user => 
+      user.username.toLowerCase().includes(lowerQuery) ||
+      user.email.toLowerCase().includes(lowerQuery)
+    );
   }
 
   private generateId(): string {

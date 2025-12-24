@@ -1,35 +1,37 @@
 import { apiService } from './api';
-import { CreatePermissionRequest, UpdatePermissionRequest, Permission } from '@/types';
+import { ApiResponse, Permission, CreatePermissionRequest, UpdatePermissionRequest } from '@/types';
 
 export class PermissionService {
-  public async getAllPermissions(): Promise<Permission[]> {
-    const response = await apiService.get<Permission[]>('/permissions');
-    return response.data || [];
+  public async getAllPermissions(params?: {
+    category?: string;
+    resource?: string;
+    search?: string;
+  }): Promise<ApiResponse<Permission[]>> {
+    return apiService.get('/permissions', { params });
   }
 
-  public async getPermissionById(id: string): Promise<Permission | null> {
-    const response = await apiService.get<Permission>(`/permissions/${id}`);
-    return response.data || null;
+  public async getPermission(id: string): Promise<ApiResponse<Permission>> {
+    return apiService.get(`/permissions/${id}`);
   }
 
-  public async createPermission(permissionData: CreatePermissionRequest): Promise<Permission> {
-    const response = await apiService.post<Permission>('/permissions', permissionData);
-    return response.data!;
+  public async createPermission(data: CreatePermissionRequest): Promise<ApiResponse<Permission>> {
+    return apiService.post('/permissions', data);
   }
 
-  public async updatePermission(id: string, updates: UpdatePermissionRequest): Promise<Permission | null> {
-    const response = await apiService.put<Permission>(`/permissions/${id}`, updates);
-    return response.data || null;
+  public async updatePermission(id: string, data: UpdatePermissionRequest): Promise<ApiResponse<Permission>> {
+    return apiService.put(`/permissions/${id}`, data);
   }
 
-  public async deletePermission(id: string): Promise<boolean> {
-    const response = await apiService.delete(`/permissions/${id}`);
-    return response.success;
+  public async deletePermission(id: string): Promise<ApiResponse<void>> {
+    return apiService.delete(`/permissions/${id}`);
   }
 
-  public async getPermissionsByResource(resource: string): Promise<Permission[]> {
-    const response = await apiService.get<Permission[]>(`/permissions/resource/${resource}`);
-    return response.data || [];
+  public async getPermissionStats(): Promise<ApiResponse<any>> {
+    return apiService.get('/permissions/stats/overview');
+  }
+
+  public async initializeSystemPermissions(): Promise<ApiResponse<void>> {
+    return apiService.post('/permissions/initialize');
   }
 }
 

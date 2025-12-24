@@ -3,6 +3,7 @@ export * from './Dashboard';
 export * from './Users';
 export * from './Roles';
 export * from './Permissions';
+export * from './JobLevels';
 export * from './Departments';
 export * from './Groups';
 export * from './NotFound';

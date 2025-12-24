@@ -1,5 +1,5 @@
-import { Group, CreateGroupRequest, UpdateGroupRequest } from '../types/shared';
 import { JsonStore } from '../utils/json-store';
+import { Group, CreateGroupRequest, UpdateGroupRequest } from '../types/shared';
 
 export class GroupModel {
   private store: JsonStore<Group>;
@@ -8,68 +8,94 @@ export class GroupModel {
     this.store = new JsonStore<Group>('groups.json');
   }
 
-  public async createGroup(data: CreateGroupRequest): Promise<Group> {
-    const groups = await this.store.read('groups.json') || [];
-    
-    const newGroup: Group = {
-      id: this.generateId(),
-      name: data.name,
-      description: data.description,
-      departmentId: data.departmentId,
-      leaderId: data.leaderId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      isActive: true,
-    };
-
-    groups.push(newGroup);
-    await this.store.write('groups.json', groups);
-    
-    return newGroup;
+  public async findAll(): Promise<Group[]> {
+    return this.store.findAll();
   }
 
-  public async getAllGroups(): Promise<Group[]> {
-    return this.store.read('groups.json') || [];
+  public async findById(id: string): Promise<Group | null> {
+    const group = this.store.findById(id);
+    return group || null;
   }
 
-  public async getGroupById(id: string): Promise<Group | null> {
-    const groups = await this.getAllGroups();
-    return groups.find(group => group.id === id) || null;
+  public async findByCode(code: string): Promise<Group | null> {
+    const group = this.store.findOne(group => group.code === code);
+    return group || null;
   }
 
-  public async getGroupsByDepartment(departmentId: string): Promise<Group[]> {
-    const groups = await this.getAllGroups();
+  public async findByName(name: string): Promise<Group | null> {
+    const group = this.store.findOne(group => group.name === name);
+    return group || null;
+  }
+
+  public async findByDepartment(departmentId: string): Promise<Group[]> {
+    const groups = await this.findAll();
     return groups.filter(group => group.departmentId === departmentId);
   }
 
-  public async updateGroup(id: string, data: UpdateGroupRequest): Promise<Group | null> {
-    const groups = await this.getAllGroups();
-    const groupIndex = groups.findIndex(group => group.id === id);
-    
-    if (groupIndex === -1) {
-      return null;
-    }
-
-    groups[groupIndex] = {
-      ...groups[groupIndex],
-      ...data,
-      updatedAt: new Date(),
-    };
-
-    await this.store.write('groups.json', groups);
-    return groups[groupIndex];
+  public async findByLeader(leaderId: string): Promise<Group[]> {
+    const groups = await this.findAll();
+    return groups.filter(group => group.leaderId === leaderId);
   }
 
-  public async deleteGroup(id: string): Promise<boolean> {
-    const groups = await this.getAllGroups();
-    const filteredGroups = groups.filter(group => group.id !== id);
-    
-    if (filteredGroups.length === groups.length) {
-      return false;
-    }
+  public async create(groupData: CreateGroupRequest): Promise<Group> {
+    const now = new Date();
+    return this.store.create({
+      ...groupData,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
-    await this.store.write('groups.json', filteredGroups);
-    return true;
+  public async update(id: string, updates: UpdateGroupRequest): Promise<Group | null> {
+    const updateData = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    return this.store.update(id, updateData);
+  }
+
+  public async delete(id: string): Promise<boolean> {
+    return this.store.delete(id);
+  }
+
+  public async exists(id: string): Promise<boolean> {
+    return this.store.exists(id);
+  }
+
+  public async existsByCode(code: string): Promise<boolean> {
+    const group = await this.findByCode(code);
+    return group !== null;
+  }
+
+  public async existsByName(name: string): Promise<boolean> {
+    const group = await this.findByName(name);
+    return group !== null;
+  }
+
+  public async count(): Promise<number> {
+    return this.store.count();
+  }
+
+  public async getActiveGroups(): Promise<Group[]> {
+    const groups = await this.findAll();
+    return groups.filter(group => group.isActive);
+  }
+
+  public async getActiveGroupsByDepartment(departmentId: string): Promise<Group[]> {
+    const groups = await this.findByDepartment(departmentId);
+    return groups.filter(group => group.isActive);
+  }
+
+  public async searchGroups(query: string): Promise<Group[]> {
+    const groups = await this.findAll();
+    const lowerQuery = query.toLowerCase();
+    
+    return groups.filter(group => 
+      group.name.toLowerCase().includes(lowerQuery) ||
+      group.code.toLowerCase().includes(lowerQuery) ||
+      group.description.toLowerCase().includes(lowerQuery)
+    );
   }
 
   private generateId(): string {

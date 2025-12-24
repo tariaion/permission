@@ -20,14 +20,22 @@ export class JsonStore<T extends { id: string }> {
       encoding: options.encoding || 'utf8',
     };
     
-    this.filePath = path.join(this.options.dataDir, filename);
+    // 简化路径处理
+    this.filePath = path.join(process.cwd(), this.options.dataDir, filename);
+    
+    // 确保数据目录存在
     this.ensureDataDir();
     this.loadData();
   }
 
   private ensureDataDir(): void {
-    if (!fs.existsSync(this.options.dataDir)) {
-      fs.mkdirSync(this.options.dataDir, { recursive: true });
+    try {
+      const dirPath = path.dirname(this.filePath);
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+    } catch (error) {
+      console.error('Failed to ensure data directory:', error);
     }
   }
 
@@ -36,6 +44,8 @@ export class JsonStore<T extends { id: string }> {
       if (fs.existsSync(this.filePath)) {
         const content = fs.readFileSync(this.filePath, this.options.encoding);
         this.data = JSON.parse(content);
+      } else {
+        this.data = [];
       }
     } catch (error) {
       console.error(`Error loading data from ${this.filePath}:`, error);
