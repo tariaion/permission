@@ -49,10 +49,50 @@
   },
   {
     "id": "perm7",
+    "name": "更新角色",
+    "resource": "roles",
+    "action": "update",
+    "description": "更新角色",
+    "createdAt": "2025-12-23T03:05:00.000Z"
+  },
+  {
+    "id": "perm8",
+    "name": "删除角色",
+    "resource": "roles",
+    "action": "delete",
+    "description": "删除角色",
+    "createdAt": "2025-12-23T03:05:00.000Z"
+  },
+  {
+    "id": "perm9",
     "name": "查看权限",
     "resource": "permissions",
     "action": "read",
     "description": "查看权限列表",
     "createdAt": "2025-12-23T03:05:00.000Z"
+  },
+  {
+    "id": "perm10",
+    "name": "创建权限",
+    "resource": "permissions",
+    "action": "create",
+    "description": "创建新权限",
+    "createdAt": "2025-12-23T03:05:00.000Z"
+  },
+  {
+    "name": "修改权限",
+    "resource": "permissions",
+    "action": "update",
+    "description": "修改权限",
+    "createdAt": "2025-12-24T03:08:19.480Z",
+    "id": "perm11"
+  },
+  {
+    "name": "删除权限",
+    "resource": "permissions",
+    "action": "delete",
+    "description": "删除权限",
+    "createdAt": "2025-12-24T03:08:19.480Z",
+    "id": "perm12"
   }
 ]
